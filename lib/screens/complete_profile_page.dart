@@ -2,9 +2,10 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dev_chat_app/component/error_show_widget.dart';
 import 'package:dev_chat_app/models/user_model.dart';
 import 'package:dev_chat_app/screens/home_page.dart';
-import 'package:dev_chat_app/screens/user_sign_up.dart';
+import 'package:dev_chat_app/theme/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -57,14 +58,14 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Select Image"),
+          title: const Text("Select Image"),
           actions: [
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                    title: Text("Gallery"),
-                    trailing: Icon(Icons.house_outlined),
+                    title: const Text("Gallery"),
+                    trailing: const Icon(Icons.house_outlined),
                     onTap: () {
                       Navigator.pop(context);
                       selectImage(ImageSource.gallery);
@@ -74,8 +75,8 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                     Navigator.pop(context);
                     selectImage(ImageSource.camera);
                   },
-                  title: Text("camera"),
-                  trailing: Icon(Icons.camera_alt_outlined),
+                  title: const Text("camera"),
+                  trailing: const Icon(Icons.camera_alt_outlined),
                 )
               ],
             )
@@ -89,6 +90,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     print("func run");
     String userName = _userNameController.text;
     if (userName.isEmpty && imageFile == null) {
+      showErrorDialog(context: context, error: "Complete all field");
       print("enter all field");
       log("enter all field");
     } else {
@@ -97,6 +99,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   }
 
   void uploadData() async {
+    showErrorDialog(context: context);
     print("upload data runnn");
     UploadTask uploadTask = FirebaseStorage.instance
         .ref("profilepictures")
@@ -113,12 +116,18 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
         .collection('user')
         .doc(widget.userModel.uid)
         .set(widget.userModel.toMap())
-        .then((value) => Navigator.pushReplacement(
+        .then(
+      (value) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+
+        Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomePage(
                   userModel: widget.userModel, firebaseUser: widget.user),
-            )));
+            ));
+      },
+    );
     print("hureeyyy ... data uploadedddd");
   }
 
@@ -126,21 +135,18 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color.fromRGBO(9, 38, 53, 1),
+        backgroundColor: backgroundColor,
         appBar: AppBar(
           centerTitle: true,
-          backgroundColor: const Color.fromRGBO(158, 200, 185, 1),
+          backgroundColor: appBarColor,
           title: const Text(
             "Chat App",
-            style: TextStyle(
-                color: Color.fromRGBO(9, 38, 53, 1),
-                fontSize: 40,
-                fontWeight: FontWeight.w600),
+            style: titleStyle,
           ),
         ),
         body: Container(
           decoration: BoxDecoration(
-            color: const Color.fromRGBO(158, 200, 185, 1),
+            color: appBarColor,
             borderRadius: BorderRadius.circular(20),
           ),
           margin: const EdgeInsets.all(20),
@@ -154,10 +160,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
               ),
               const Text(
                 "Profile Page",
-                style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w600,
-                    color: Color.fromRGBO(9, 38, 53, 1)),
+                style: headingStyle,
               ),
               CupertinoButton(
                 onPressed: () {
@@ -178,7 +181,8 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
               ),
               TextField(
                 controller: _userNameController,
-                decoration: InputDecoration(hintText: "User Name"),
+                decoration: const InputDecoration(
+                    hintText: "User Name", hintStyle: textFieldDecorationStyle),
               ),
               const SizedBox(
                 height: 30,
@@ -187,10 +191,10 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                 onPressed: () {
                   checkValues();
                 },
-                color: const Color.fromRGBO(9, 38, 53, 1),
+                color: backgroundColor,
                 child: const Text(
                   "Submit",
-                  style: TextStyle(color: Color.fromRGBO(158, 200, 185, 1)),
+                  style: buttonStyle,
                 ),
               ),
               const SizedBox(

@@ -1,7 +1,11 @@
+import 'package:dev_chat_app/auth/auth_error.dart';
+import 'package:dev_chat_app/component/error_show_widget.dart';
 import 'package:dev_chat_app/models/user_model.dart';
 import 'package:dev_chat_app/screens/complete_profile_page.dart';
+import 'package:dev_chat_app/screens/show_auth_error_screen.dart';
 import 'package:dev_chat_app/screens/user_login.dart';
 import 'package:dev_chat_app/screens/user_sign_up.dart';
+import 'package:dev_chat_app/theme/theme.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +20,7 @@ class UserSignUp extends StatefulWidget {
 }
 
 class _UserSignUpState extends State<UserSignUp> {
+  AuthError? authError;
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _confirmPasswordController = TextEditingController();
@@ -28,13 +33,24 @@ class _UserSignUpState extends State<UserSignUp> {
         RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
     if (email.isEmpty && password.isEmpty && confirmPassword.isEmpty) {
       print("enter all value");
+      showErrorDialog(
+        context: context,
+        error: "Enter All Field",
+      );
     } else if (EmailValidator.validate(email) == false) {
       print("incorrect email value");
+      showErrorDialog(context: context, error: "Incorrect email value");
     } else if (!regex.hasMatch(password)) {
       print(
           "password must contain one uppercase,one lowercase, one digit, one special character,and atleast 8 character");
+      showErrorDialog(
+          context: context,
+          error:
+              "password must contain one uppercase,one lowercase, one digit, one special character,and atleast 8 character");
     } else if (password != confirmPassword) {
       print("confirm password does not match");
+      showErrorDialog(
+          context: context, error: "Confirm password does not match");
     } else {
       print("successfull");
       signUp(email, password);
@@ -42,15 +58,22 @@ class _UserSignUpState extends State<UserSignUp> {
   }
 
   void signUp(String email, String password) async {
+    showErrorDialog(context: context);
     UserCredential? credential;
     try {
       credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
+      print("credential isssssssss : ${credential}");
     } on FirebaseAuthException catch (error) {
+      Navigator.pop(context);
+      authError = AuthError.from(error);
+      showAuthErrorDialog(context: context, authError: authError);
+
       print(error.code.toString());
     }
 
     if (credential != null) {
+      print("helllllllloooooooooooo");
       String uid = credential.user!.uid;
       UserModel newUser =
           UserModel(uid: uid, fullname: "", email: email, profilePicUrl: "");
@@ -59,6 +82,7 @@ class _UserSignUpState extends State<UserSignUp> {
           .doc(uid)
           .set(newUser.toMap())
           .then((value) {
+        Navigator.popUntil(context, (route) => route.isFirst);
         Navigator.pushReplacement(context, MaterialPageRoute(
           builder: (context) {
             return CompleteProfilePage(
@@ -74,23 +98,20 @@ class _UserSignUpState extends State<UserSignUp> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color.fromRGBO(9, 38, 53, 1),
+        backgroundColor: backgroundColor,
         appBar: AppBar(
           automaticallyImplyLeading: false,
           centerTitle: true,
-          backgroundColor: const Color.fromRGBO(158, 200, 185, 1),
+          backgroundColor: appBarColor,
           title: const Text(
             "Chat App",
-            style: TextStyle(
-                color: Color.fromRGBO(9, 38, 53, 1),
-                fontSize: 40,
-                fontWeight: FontWeight.w600),
+            style: titleStyle,
           ),
         ),
         body: Center(
           child: Container(
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(158, 200, 185, 1),
+              color: appBarColor,
               borderRadius: BorderRadius.circular(20),
             ),
             margin: const EdgeInsets.all(20),
@@ -103,22 +124,24 @@ class _UserSignUpState extends State<UserSignUp> {
                 ),
                 const Text(
                   "Sign Up",
-                  style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w600,
-                      color: Color.fromRGBO(9, 38, 53, 1)),
+                  style: headingStyle,
                 ),
                 TextField(
                   controller: _emailController,
-                  decoration: InputDecoration(hintText: "E-mail"),
+                  decoration: InputDecoration(
+                      hintText: "E-mail", hintStyle: textFieldDecorationStyle),
                 ),
                 TextField(
                   controller: _passwordController,
-                  decoration: InputDecoration(hintText: "Password"),
+                  decoration: InputDecoration(
+                      hintText: "Password",
+                      hintStyle: textFieldDecorationStyle),
                 ),
                 TextField(
                   controller: _confirmPasswordController,
-                  decoration: InputDecoration(hintText: "Confirm Password"),
+                  decoration: InputDecoration(
+                      hintText: "Confirm Password",
+                      hintStyle: textFieldDecorationStyle),
                 ),
                 const SizedBox(
                   height: 30,
@@ -132,10 +155,10 @@ class _UserSignUpState extends State<UserSignUp> {
                     //       builder: (context) => ProfilePage(),
                     //     ));
                   },
-                  color: const Color.fromRGBO(9, 38, 53, 1),
+                  color: backgroundColor,
                   child: const Text(
                     "Sign Up",
-                    style: TextStyle(color: Color.fromRGBO(158, 200, 185, 1)),
+                    style: buttonStyle,
                   ),
                 ),
                 const SizedBox(
@@ -146,7 +169,7 @@ class _UserSignUpState extends State<UserSignUp> {
           ),
         ),
         bottomNavigationBar: Container(
-          color: const Color.fromRGBO(158, 200, 185, 1),
+          color: appBarColor,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -158,12 +181,9 @@ class _UserSignUpState extends State<UserSignUp> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text(
+                  child: Text(
                     "Log In",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        color: Color.fromRGBO(9, 38, 53, 1)),
+                    style: linkStyle,
                   ))
             ],
           ),

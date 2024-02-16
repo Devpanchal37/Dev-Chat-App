@@ -7,13 +7,17 @@ import 'package:dev_chat_app/screens/user_sign_up.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 //we can use anywhere
 var uuid = Uuid();
 
 void main() async {
+  FirebaseHelper.firebaseMessagingToken();
   WidgetsFlutterBinding.ensureInitialized();
+  //Remove this method to stop OneSignal Debugging
+
   await Firebase.initializeApp(
       options: const FirebaseOptions(
           apiKey: "AIzaSyALKEgCACRuTeo9M4PapbZu2j59uKT8W_A",
@@ -22,7 +26,7 @@ void main() async {
           projectId: "dev-chat-app-9f2ac",
           storageBucket: "dev-chat-app-9f2ac.appspot.com"));
   User? currentUser = FirebaseAuth.instance.currentUser;
-  // Logged in if exit
+
   if (currentUser != null) {
     UserModel? thisUserModel =
         await FirebaseHelper.fetchUserData(currentUser.uid);
@@ -48,17 +52,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       theme: ThemeData(
         useMaterial3: true,
-        // primaryColor: const Color.fromRGBO(9, 38, 53, 1),
         colorScheme: ColorScheme.fromSeed(
-            seedColor: Color.fromRGBO(255, 247, 212, 1),
-            brightness: Brightness.light
-            // const Color.fromRGBO(9, 38, 53, 1),
-            ),
-        textTheme: const TextTheme(
-            displayLarge: TextStyle(
-                color: Color.fromRGBO(9, 38, 53, 1),
-                fontSize: 40,
-                fontWeight: FontWeight.w600)),
+          seedColor: Color(0xffB2A59B),
+          // ···
+          // brightness: Brightness.dark,
+        ),
       ),
       debugShowCheckedModeBanner: false,
       home: const UserLogin(),
@@ -77,6 +75,15 @@ class UserAlreadyLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xffB2A59B),
+          // ···
+          // brightness: Brightness.dark,
+        ),
+      ),
+      debugShowCheckedModeBanner: false,
       home: HomePage(userModel: userModel, firebaseUser: firebaseUser),
     );
   }

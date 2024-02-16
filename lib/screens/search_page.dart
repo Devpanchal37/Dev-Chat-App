@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dev_chat_app/main.dart';
 import 'package:dev_chat_app/models/user_model.dart';
 import 'package:dev_chat_app/screens/chat_room_page.dart';
+import 'package:dev_chat_app/theme/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -63,9 +64,15 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text("Chat App"),
+        centerTitle: true,
+        backgroundColor: appBarColor,
+        title: const Text(
+          "Chat App",
+          style: titleStyle,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.only(left: 30, right: 30),
@@ -73,18 +80,22 @@ class _SearchPageState extends State<SearchPage> {
           children: [
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(hintText: "Enter Email"),
+              decoration: InputDecoration(
+                  hintText: "Enter Email", hintStyle: textFieldDecorationStyle),
             ),
             const SizedBox(
               height: 50,
             ),
             CupertinoButton(
-              color: Colors.purple.shade500,
+              color: appBarColor,
               onPressed: () {
                 setState(() {});
                 // searchUser(_emailController.text.trim());
               },
-              child: const Text("Search"),
+              child: const Text(
+                "Search",
+                style: buttonStyle,
+              ),
             ),
             StreamBuilder(
               //check email equal or not

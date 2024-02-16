@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dev_chat_app/main.dart';
 import 'package:dev_chat_app/models/chat_room_model.dart';
 import 'package:dev_chat_app/models/message_model.dart';
 import 'package:dev_chat_app/models/user_model.dart';
+import 'package:dev_chat_app/theme/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final UserModel targetedUser;
@@ -25,6 +30,40 @@ class ChatRoomPage extends StatefulWidget {
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
   TextEditingController messageController = TextEditingController();
+
+  Future<Response> sendNotification(
+      {required String contents, required String heading}) async {
+    print("starting one signal notification");
+    print(
+        "targeted user subscription idddddddddd: ${widget.targetedUser.subscriptionId}");
+    return await post(
+      Uri.parse('https://onesignal.com/api/v1/notifications'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        // 'Authorization':
+        //     'Bearer OTY4NDcwOTMtMzU1Mi00NzkwLTk3NjktMzZhMjBjYzUwMTc2'
+      },
+      body: jsonEncode(<String, dynamic>{
+        "app_id": "a41c0bac-f06a-4c42-b5dc-858d5890835c",
+        //kAppId is the App Id that one get from the OneSignal When the application is registered.
+
+        "include_player_ids": [widget.targetedUser.subscriptionId],
+        //tokenIdList Is the List of All the Token Id to to Whom notification must be sent.
+
+        // android_accent_color reprsent the color of the heading text in the notifiction
+        "android_accent_color": "FF9976D2",
+
+        "small_icon": "ic_stat_onesignal_default",
+
+        "large_icon":
+            "https://www.filepicker.io/api/file/zPloHSmnQsix82nlj9Aj?filename=name.jpg",
+
+        "headings": {"en": heading},
+
+        "contents": {"en": contents},
+      }),
+    );
+  }
 
   void sendMessage() async {
     String message = messageController.text.trim();
@@ -47,6 +86,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           .collection("chatrooms")
           .doc(widget.chatRoom.chatRoomId)
           .set(widget.chatRoom.toMap());
+
+      // void sendOneSignalNotification(String message) async {
+      //   var status = OneSignal.User.pushSubscription.id;
+      //   OneSignal.User.addTagWithKey("test2", "val1");
+      //   print("idddddddddddddddddddddddddddddddd:          : ${status}");
+      //   var notification = OSNotification({
+      //     'playerIds': '$status',
+      //     // 'smallIcon': 'ic_stat_one_signal_default',
+      //     // 'largeIcon': 'ic_stat_one_signal_default',
+      //     // 'title': 'title',
+      //     // 'sound': 'sound',
+      //     // 'body': 'message',
+      //     // 'buttons': '[OSActionButton(text: "OK", id: "id1")]',
+      //   });
+      //   print("NOTIFICATIONNNNNNNNNNNNNNNNNN:         ${notification}");
+      //   // await OneSignal.Notifications.
+      // }
+      sendNotification(contents: message, heading: widget.userModel.fullname!)
+          .then((value) => print("${value.body}"));
       messageController.clear();
       print("msg successful");
     }
@@ -54,21 +112,31 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
+          backgroundColor: appBarColor,
           title: Row(
-        children: [
-          CircleAvatar(
-            child: Image.network(widget.targetedUser.profilePicUrl.toString()),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          Text(widget.targetedUser.fullname.toString())
-        ],
-      )),
+            children: [
+              CircleAvatar(
+                child: Image.network(
+                  widget.targetedUser.profilePicUrl.toString(),
+                ),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              Expanded(
+                child: Text(
+                  (widget.targetedUser.fullname.toString().isNotEmpty)
+                      ? widget.targetedUser.fullname.toString()
+                      : " User",
+                  style: titleStyle,
+                ),
+              )
+            ],
+          )),
       body: Container(
+        color: backgroundColor,
         child: Column(
           children: [
             // chat area
@@ -111,15 +179,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                         vertical: 3, horizontal: 10),
                                     decoration: BoxDecoration(
                                         color: (currentMsgSender == logedUser)
-                                            ? Colors.green
-                                            : Colors.blue.shade500,
+                                            ? Color.fromRGBO(234, 219, 200, 1)
+                                            : Color.fromRGBO(218, 192, 163, 1),
                                         borderRadius: BorderRadius.circular(5)),
                                     child: Text(
                                       currentMessage.text.toString(),
-                                      style: const TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 20),
+                                      style: messageStyle,
                                       overflow: TextOverflow.visible,
                                     ),
                                   ),
@@ -146,29 +211,42 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 },
               ),
             )),
-            Container(
-              color: Colors.grey.shade200,
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-              child: Row(
-                children: [
-                  Flexible(
-                      child: TextField(
-                    maxLines: null,
-                    controller: messageController,
-                    decoration: const InputDecoration(
-                        hintText: "Write Message", border: InputBorder.none),
-                  )),
-                  IconButton(
-                      onPressed: () {
-                        sendMessage();
-                      },
-                      icon: const Icon(Icons.send))
-                ],
-              ),
+            Column(
+              children: [
+                const SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  color: appBarColor,
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                  child: Row(
+                    children: [
+                      Flexible(
+                          child: TextField(
+                        maxLines: null,
+                        controller: messageController,
+                        decoration: const InputDecoration(
+                            hintText: "Write Message",
+                            hintStyle: TextStyle(color: fontColor),
+                            border: InputBorder.none),
+                      )),
+                      IconButton(
+                          onPressed: () {
+                            sendMessage();
+                          },
+                          icon: const Icon(
+                            Icons.send,
+                            size: 30,
+                            color: backgroundColor,
+                          ))
+                    ],
+                  ),
+                ),
+              ],
             )
           ],
         ),
       ),
-    ));
+    );
   }
 }
