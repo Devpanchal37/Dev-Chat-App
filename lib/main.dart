@@ -11,7 +11,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 //we can use anywhere
-var uuid = Uuid();
+var uuid = const Uuid();
 
 void main() async {
   FirebaseHelper.firebaseMessagingToken();
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xffB2A59B),
+          seedColor: const Color(0xffB2A59B),
           // ···
           // brightness: Brightness.dark,
         ),
@@ -78,7 +78,7 @@ class UserAlreadyLogin extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xffB2A59B),
+          seedColor: const Color(0xffB2A59B),
           // ···
           // brightness: Brightness.dark,
         ),
